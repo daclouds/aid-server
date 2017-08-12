@@ -1,8 +1,6 @@
 const express = require('express');
 const request = require('request');
 
-const router = express.Router();
-
 const apiUrl = 'https://api.dribbble.com/v1';
 const accessToken = '';
 
@@ -12,28 +10,24 @@ const baseRequest = request.defaults({
   }
 });
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
-
-router.get('/shots', function(req, res, next) {
+function shots(limit) {
   baseRequest(apiUrl + '/shots/?date=2017-08-01&access_token=' + accessToken, function (error, response, body) {
     const shots = JSON.parse(body);
     // console.log(shots);
     if (error) {
       console.log(error);
+      res.send(error);
       return;
     }
     if (shots.message) {
       console.log(shots);
       return;
     }
-    uploadShotImages(shots.slice(0, 10), res); 
+    uploadShotImages(shots.slice(0, limit), limit); 
   });
-});
+}
 
-function uploadShotImages(shots, res) {
+function uploadShotImages(shots, limit) {
   const imagesArr = [];
   // console.log(shots);
   for (const shot of shots) {
@@ -45,7 +39,7 @@ function uploadShotImages(shots, res) {
       }
       // console.log(body);
       const userShots = JSON.parse(body);
-      for (const userShot of userShots.slice(0, 10)) {
+      for (const userShot of userShots.slice(0, limit)) {
         // console.log(userShot.id);
 	// console.log(userShot.tags);
         handleShot(userShot.id, userShot.tags, (images, tags) => {
@@ -63,7 +57,7 @@ function uploadShotImages(shots, res) {
       }
     });
   }
-  // console.log(imagesArr);
+  console.log(imagesArr);
 }
 
 function handleShot(id, tags, callback) {
@@ -80,14 +74,4 @@ function handleShot(id, tags, callback) {
   });
 }
 
-router.get('/shots/:id', function(req, res, next) {
-  const id = req.params.id;
-  handleShot(id, null, (images, tags) => {
-    if (images.normal) {
-      res.send('<img src="' + images.normal + '" />');
-    }
-  });
-  // res.send('search works!');
-});
-
-module.exports = router;
+shots(10);
